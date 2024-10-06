@@ -95,6 +95,10 @@ export class TripsService {
     trip.updated_at = new Date();
     await this.tripsRepository.save(trip);
 
+    trip.pasajero.estado = EstadoViaje.ACTIVO;
+    trip.conductor.estado = EstadoViaje.ACTIVO;
+    await this.usersRepository.save([trip.pasajero, trip.conductor]);
+
     const invoice = await this.invoicesService.createInvoice(trip);
     return this.invoicesService.generateInvoicePdf(invoice.id);
   }
