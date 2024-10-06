@@ -1,0 +1,40 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taxi24_app
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: taxi24_user
+      POSTGRES_PASSWORD: taxi24_password
+      POSTGRES_DB: taxi24
+    command: sh -c "npm run seed:run && npm run start:prod"
+    networks:
+      - taxi24_network
+
+  db:
+    image: postgres:latest
+    container_name: taxi24_db
+    environment:
+      POSTGRES_USER: taxi24_user
+      POSTGRES_PASSWORD: taxi24_password
+      POSTGRES_DB: taxi24
+    ports:
+      - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - taxi24_network
+
+volumes:
+  db_data:
+
+networks:
+  taxi24_network:
+    driver: bridge
