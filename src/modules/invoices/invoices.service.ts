@@ -5,18 +5,38 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Invoice } from './entities/invoice.entity';
 import { Trip } from '../trips/entities/trip.entity';
+import { Config } from '../../database/entities/config.entity';
 import { InvoiceTemplate } from '../../templates/invoiceTemplate';
+import { getConfig } from '../../utils/config.util';
 
 @Injectable()
 export class InvoicesService {
   constructor(
     @InjectRepository(Invoice)
     private invoicesRepository: Repository<Invoice>,
+    @InjectRepository(Config)
+    private configRepository: Repository<Config>,
   ) {}
 
   async createInvoice(trip: Trip): Promise<Invoice> {
-    const total = this.calculateTotal(trip);
-    const invoice = this.invoicesRepository.create({ trip, total });
+    const config = await getConfig(this.configRepository);
+
+    const trip_total = this.calculateTotal(trip, config.price_per_km);
+    const service_fee = this.calculateServiceFee(
+      trip_total,
+      config.service_fee_percentage,
+    );
+    const tax = trip_total * config.tax_percentage;
+    const total = trip_total + service_fee + tax;
+
+    const invoice = this.invoicesRepository.create({
+      trip,
+      trip_total,
+      service_fee,
+      tax,
+      total,
+    });
+
     return this.invoicesRepository.save(invoice);
   }
 
@@ -29,7 +49,7 @@ export class InvoicesService {
     if (!invoice) {
       throw new NotFoundException(`Factura con ID ${invoiceId} no encontrada.`);
     }
-
+    const config = await getConfig(this.configRepository);
     const template = Handlebars.compile(InvoiceTemplate);
 
     const invoiceData = {
@@ -49,10 +69,11 @@ export class InvoicesService {
         invoice.trip.destino_latitud,
         invoice.trip.destino_longitud,
       ).toFixed(2),
-      price_per_km: 25,
-      trip_total: invoice.total,
-      tax: (invoice.total * 0.18).toFixed(2),
-      total: (invoice.total * 1.18).toFixed(2),
+      price_per_km: config.price_per_km,
+      trip_total: invoice.trip_total,
+      service_fee: invoice.service_fee,
+      tax: invoice.tax,
+      total: invoice.total,
     };
 
     const htmlToRender = template(invoiceData);
@@ -69,8 +90,7 @@ export class InvoicesService {
     return pdfBuffer;
   }
 
-  calculateTotal(trip: Trip): number {
-    const pricePerKm = 25;
+  private calculateTotal(trip: Trip, pricePerKm: number): number {
     const distanceKm = this.calculateDistance(
       trip.origen_latitud,
       trip.origen_longitud,
@@ -80,13 +100,20 @@ export class InvoicesService {
     return pricePerKm * distanceKm;
   }
 
+  private calculateServiceFee(
+    tripTotal: number,
+    serviceFeePercentage: number,
+  ): number {
+    return tripTotal * serviceFeePercentage;
+  }
+
   private calculateDistance(
     lat1: number,
     lon1: number,
     lat2: number,
     lon2: number,
   ): number {
-    const R = 6371;
+    const R = 6371; // Radio de la Tierra en km
     const dLat = this.degreesToRadians(lat2 - lat1);
     const dLon = this.degreesToRadians(lon2 - lon1);
     const a =

@@ -32,7 +32,7 @@ export class CreateTrips {
     }
 
     // Conductores ocupados
-    await tripRepository.save([
+    const trips = [
       {
         pasajero: passengers[0],
         conductor: drivers[0],
@@ -55,14 +55,19 @@ export class CreateTrips {
         created_at: currentDate,
         updated_at: currentDate,
       },
-    ]);
+    ];
 
+    // Actualizar estado de conductores y pasajeros a 'OCUPADO'
     drivers[0].estado = EstadoViaje.OCUPADO;
     drivers[1].estado = EstadoViaje.OCUPADO;
-    await userRepository.save(drivers);
+    passengers[0].estado = EstadoViaje.OCUPADO;
+    passengers[1].estado = EstadoViaje.OCUPADO;
+
+    await userRepository.save([...drivers, passengers[0], passengers[1]]);
+    await tripRepository.save(trips);
 
     // Viajes finalizados
-    await tripRepository.save([
+    const completedTrips = [
       {
         pasajero: passengers[2],
         conductor: drivers[0],
@@ -96,7 +101,9 @@ export class CreateTrips {
         created_at: currentDate,
         updated_at: currentDate,
       },
-    ]);
+    ];
+
+    await tripRepository.save(completedTrips);
 
     console.log('Trip seed data has been inserted.');
   }

@@ -1,11 +1,16 @@
 import { AppDataSource } from '../datasource';
 import { CreateUsers } from './user.seed';
 import { CreateTrips } from './trip.seed';
+import { SeedConfig } from './config.seed';
 
 async function runSeeds() {
   try {
     await AppDataSource.initialize();
     console.log('Data Source has been initialized!');
+
+    const ConfigSeeder = new SeedConfig();
+    await ConfigSeeder.run(AppDataSource);
+    console.log('Config seeding completed!');
 
     const userSeeder = new CreateUsers();
     await userSeeder.run(AppDataSource);

@@ -158,25 +158,37 @@
    - Estructura de los datos (tipos de datos):
      ```json
      {
-       "pasajeroId": "NUMBER",
-       "origen_latitud": "NUMBER",
-       "origen_longitud": "NUMBER",
+       "pasajero_id": "NUMBER",
+       "origen_latitud": "NUMBER (opcional)",
+       "origen_longitud": "NUMBER (opcional)",
        "destino_latitud": "NUMBER",
        "destino_longitud": "NUMBER"
      }
      ```
 
-   - Crea un viaje asignando el conductor más cercano disponible y marca al pasajero y al conductor como ocupados. La estructura del viaje es:
+   - Crea un viaje asignando el conductor más cercano disponible y marca al pasajero y al conductor como ocupados. Si no se especifican las coordenadas de origen (`origen_latitud` y `origen_longitud`), se utilizarán las coordenadas almacenadas del pasajero. Las coordenadas de destino son obligatorias.
 
-        ```bash
-        {
-          "pasajeroId": 1,
-          "origen_latitud": 18.4845,
-          "origen_longitud": -69.9295,
-          "destino_latitud": 18.4745,
-          "destino_longitud": -69.9195
-        }
-        ```
+     - **Ejemplo de estructura de datos con coordenadas de origen especificadas**:
+
+       ```bash
+       {
+         "pasajero_id": 1,
+         "origen_latitud": 18.4845,
+         "origen_longitud": -69.9295,
+         "destino_latitud": 18.4745,
+         "destino_longitud": -69.9195
+       }
+       ```
+
+     - **Ejemplo de estructura de datos sin especificar coordenadas de origen (usará las del pasajero)**:
+
+       ```bash
+       {
+         "pasajero_id": 1,
+         "destino_latitud": 18.4745,
+         "destino_longitud": -69.9195
+       }
+       ```
 
 3. **Completar un viaje y generar la factura**
    - `PATCH /trips/:id/complete`
@@ -198,6 +210,10 @@
 
 2. **Docker para despliegue rápido y preciso**:
    - Se utilizó **Docker** para contenedorización y despliegue, lo que asegura que la aplicación pueda ser ejecutada de manera rápida y precisa. Esto es particularmente útil para fines de prueba, ya que Docker permite que los seeds de la base de datos se corran automáticamente al iniciar los contenedores, asegurando que los datos estén listos para probar la API sin intervención manual.
+
+2. **Uso de una tabla `Config` para manejar variables dinámicas**:
+
+    - Se creó una tabla `Config` que almacena valores clave como el precio por kilómetro (`price_per_km`), el porcentaje de tarifa de servicio (`service_fee_percentage`), el porcentaje de impuestos (`tax_percentage`), y otros valores importantes como la distancia de búsqueda de conductores (`distance_km`). Esta tabla permite que las variables globales puedan cambiarse sin necesidad de modificar el código de la aplicación. Si en algún momento el impuesto o el precio por kilómetro cambian, basta con actualizar los valores en la tabla Config, lo que afectará inmediatamente a todo el sistema sin la necesidad de redeployar el código.
 
 ## Pruebas
 
@@ -223,6 +239,10 @@ Para ejecutar todas las pruebas, utiliza el siguiente comando:
 ```bash
 npm run test
 ```
+
+ > Al ejecutar este comando, se ejecutarán todas las pruebas unitarias y verás un resumen de los resultados en la terminal. Este resumen incluirá el número de pruebas ejecutadas, cuántas pasaron correctamente y cuántas fallaron. A continuación, se muestra un ejemplo del resultado que verás:
+ 
+ ![Test Generada](images/test.png)
 
 ## Mejoras Futuras
 

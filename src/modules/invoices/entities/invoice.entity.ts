@@ -15,6 +15,15 @@ export class Invoice {
   id: number;
 
   @Column('decimal', { precision: 10, scale: 2 })
+  trip_total: number;
+
+  @Column('decimal', { precision: 10, scale: 2 })
+  service_fee: number;
+
+  @Column('decimal', { precision: 10, scale: 2 })
+  tax: number;
+
+  @Column('decimal', { precision: 10, scale: 2 })
   total: number;
 
   @OneToOne(() => Trip, (trip) => trip.invoice)

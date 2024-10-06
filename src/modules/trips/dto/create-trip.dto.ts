@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsPositive } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNumber, IsPositive, IsOptional } from 'class-validator';
 
 export class CreateTripDto {
   @ApiProperty({
@@ -10,19 +10,21 @@ export class CreateTripDto {
   @IsPositive()
   pasajero_id: number;
 
-  @ApiProperty({
-    description: 'Latitud del punto de origen',
+  @ApiPropertyOptional({
+    description: 'Latitud del punto de origen, si es diferente a la ubicación actual del pasajero',
     example: 18.4845,
   })
+  @IsOptional()
   @IsNumber()
-  origen_latitud: number;
+  origen_latitud?: number;
 
-  @ApiProperty({
-    description: 'Longitud del punto de origen',
+  @ApiPropertyOptional({
+    description: 'Longitud del punto de origen, si es diferente a la ubicación actual del pasajero',
     example: -69.9295,
   })
+  @IsOptional()
   @IsNumber()
-  origen_longitud: number;
+  origen_longitud?: number;
 
   @ApiProperty({
     description: 'Latitud del punto de destino',

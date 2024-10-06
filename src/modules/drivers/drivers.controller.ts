@@ -17,7 +17,6 @@ export class DriversController {
     return this.driversService.findAvailableDriversInRadius(
       latitude,
       longitude,
-      3,
     );
   }
 

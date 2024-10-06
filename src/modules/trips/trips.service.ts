@@ -27,12 +27,16 @@ export class TripsService {
   ) {}
 
   async getActiveTrips(): Promise<Trip[]> {
-    return this.tripsRepository.find({
-      where: {
-        estado: EstadoViaje.OCUPADO,
-      },
+    const activeTrips = await this.tripsRepository.find({
+      where: { estado: EstadoViaje.OCUPADO },
       relations: ['pasajero', 'conductor'],
     });
+
+    if (!activeTrips.length) {
+      throw new NotFoundException('No hay viajes activos en este momento.');
+    }
+
+    return activeTrips;
   }
 
   async createTrip(createTripDto: CreateTripDto): Promise<Trip> {
@@ -48,12 +52,15 @@ export class TripsService {
       throw new ConflictException('El pasajero ya está en un viaje ocupado.');
     }
 
+    const origen_latitud = createTripDto.origen_latitud ?? pasajero.latitude;
+    const origen_longitud = createTripDto.origen_longitud ?? pasajero.longitude;
+
     const nearestDrivers = await this.passengersService.findNearestDrivers(
-      createTripDto.origen_latitud,
-      createTripDto.origen_longitud,
+      origen_latitud,
+      origen_longitud,
     );
 
-    if (nearestDrivers.length === 0) {
+    if (!nearestDrivers.length) {
       throw new NotFoundException('No hay conductores disponibles cerca.');
     }
 
@@ -61,7 +68,7 @@ export class TripsService {
       (driver) => driver.estado !== EstadoViaje.OCUPADO,
     );
 
-    if (availableDrivers.length === 0) {
+    if (!availableDrivers.length) {
       throw new ConflictException('No hay conductores disponibles.');
     }
 
@@ -77,8 +84,8 @@ export class TripsService {
       pasajero,
       conductor,
       estado: EstadoViaje.OCUPADO,
-      origen_latitud: createTripDto.origen_latitud,
-      origen_longitud: createTripDto.origen_longitud,
+      origen_latitud: origen_latitud,
+      origen_longitud: origen_longitud,
       destino_latitud: createTripDto.destino_latitud,
       destino_longitud: createTripDto.destino_longitud,
       created_at: new Date(),
