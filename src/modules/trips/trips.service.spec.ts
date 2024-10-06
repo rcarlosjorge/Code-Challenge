@@ -2,16 +2,34 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TripsService } from './trips.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Trip } from './entities/trip.entity';
+import { User } from '../../database/entities/user.entity';
 import { Repository } from 'typeorm';
-import { EstadoViaje, User } from '../db/entities/user.entity';
+import { PassengersService } from '../passengers/passengers.service';
+import { InvoicesService } from '../invoices/invoices.service';
+import { EstadoViaje } from '../../database/entities/user.entity';
 import { Invoice } from '../invoices/entities/invoice.entity';
 
 describe('TripsService', () => {
   let service: TripsService;
   let tripsRepository: Repository<Trip>;
+  let usersRepository: Repository<User>;
 
   const mockTripsRepository = {
     find: jest.fn(),
+  };
+
+  const mockUsersRepository = {
+    findOne: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockPassengersService = {
+    findNearestDrivers: jest.fn(),
+  };
+
+  const mockInvoicesService = {
+    createInvoice: jest.fn(),
+    generateInvoicePdf: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -19,11 +37,15 @@ describe('TripsService', () => {
       providers: [
         TripsService,
         { provide: getRepositoryToken(Trip), useValue: mockTripsRepository },
+        { provide: getRepositoryToken(User), useValue: mockUsersRepository },
+        { provide: PassengersService, useValue: mockPassengersService },
+        { provide: InvoicesService, useValue: mockInvoicesService },
       ],
     }).compile();
 
     service = module.get<TripsService>(TripsService);
     tripsRepository = module.get<Repository<Trip>>(getRepositoryToken(Trip));
+    usersRepository = module.get<Repository<User>>(getRepositoryToken(User));
   });
 
   it('should be defined', () => {
@@ -66,8 +88,9 @@ describe('TripsService', () => {
     expect(result).toEqual(trips);
     expect(tripsRepository.find).toHaveBeenCalledWith({
       where: {
-        estado: 'ocupado',
+        estado: EstadoViaje.OCUPADO,
       },
+      relations: ['pasajero', 'conductor'],
     });
   });
 });

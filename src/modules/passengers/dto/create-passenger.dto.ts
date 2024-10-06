@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNumber } from 'class-validator';
-import { EstadoViaje } from '../../db/entities/user.entity';
+import { EstadoViaje } from '../../../database/entities/user.entity';
 
 export class CreatePassengerDto {
   @ApiProperty({
@@ -8,21 +8,21 @@ export class CreatePassengerDto {
     example: 'Carlos',
   })
   @IsString()
-  name: string; // Campo para el nombre del pasajero.
+  name: string;
 
   @ApiProperty({
     description: 'Latitud geográfica del pasajero',
     example: 18.4845,
   })
   @IsNumber()
-  latitude: number; // Campo para la latitud.
+  latitude: number;
 
   @ApiProperty({
     description: 'Longitud geográfica del pasajero',
     example: -69.9295,
   })
   @IsNumber()
-  longitude: number; // Campo para la longitud.
+  longitude: number;
 
   @ApiProperty({
     description: 'Rol del usuario (passenger)',

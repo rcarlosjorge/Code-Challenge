@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateDriverDto } from './dto/create-driver.dto';
-import { User, UserRole, EstadoViaje } from '../db/entities/user.entity';
+import {
+  User,
+  UserRole,
+  EstadoViaje,
+} from '../../database/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 

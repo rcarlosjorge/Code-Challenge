@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DbModule } from './db/db.module';
-import { DriversModule } from './drivers/drivers.module';
-import { PassengersModule } from './passengers/passengers.module';
-import { TripsModule } from './trips/trips.module';
-import { InvoicesModule } from './invoices/invoices.module';
+import { TripsModule } from './modules/trips/trips.module';
+import { DbModule } from './database/db.module';
+import { PassengersModule } from './modules/passengers/passengers.module';
+import { DriversModule } from './modules/drivers/drivers.module';
+import { InvoicesModule } from './modules/invoices/invoices.module';
 
 @Module({
   imports: [

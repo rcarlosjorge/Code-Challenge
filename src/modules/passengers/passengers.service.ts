@@ -2,7 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePassengerDto } from './dto/create-passenger.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { EstadoViaje, User, UserRole } from '../db/entities/user.entity';
+import {
+  EstadoViaje,
+  User,
+  UserRole,
+} from '../../database/entities/user.entity';
 
 @Injectable()
 export class PassengersService {
@@ -17,14 +21,13 @@ export class PassengersService {
     const passenger = this.usersRepository.create({
       ...createPassengerDto,
       role: UserRole.PASSENGER,
-      estado: EstadoViaje.ACTIVO, 
+      estado: EstadoViaje.ACTIVO,
       created_at: currentDate,
       updated_at: currentDate,
     });
 
     return this.usersRepository.save(passenger);
-}
-
+  }
 
   async findAll(): Promise<User[]> {
     return this.usersRepository.find({

@@ -6,7 +6,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Trip } from './entities/trip.entity';
-import { User, UserRole, EstadoViaje } from '../db/entities/user.entity';
+import {
+  User,
+  UserRole,
+  EstadoViaje,
+} from '../../database/entities/user.entity';
 import { PassengersService } from '../passengers/passengers.service';
 import { InvoicesService } from '../invoices/invoices.service';
 import { CreateTripDto } from './dto/create-trip.dto';

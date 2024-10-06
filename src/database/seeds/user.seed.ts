@@ -109,6 +109,33 @@ export class CreateUsers {
           created_at: currentDate,
           updated_at: currentDate,
         },
+        {
+          name: 'Fernando Ruiz',
+          latitude: 18.495,
+          longitude: -69.939,
+          role: UserRole.PASSENGER,
+          estado: EstadoViaje.ACTIVO,
+          created_at: currentDate,
+          updated_at: currentDate,
+        },
+        {
+          name: 'Elena Castillo',
+          latitude: 18.496,
+          longitude: -69.94,
+          role: UserRole.PASSENGER,
+          estado: EstadoViaje.ACTIVO,
+          created_at: currentDate,
+          updated_at: currentDate,
+        },
+        {
+          name: 'Diego Navarro',
+          latitude: 18.497,
+          longitude: -69.941,
+          role: UserRole.PASSENGER,
+          estado: EstadoViaje.ACTIVO,
+          created_at: currentDate,
+          updated_at: currentDate,
+        },
       ])
       .execute();
 

@@ -1,7 +1,7 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { User } from '../db/entities/user.entity';
-import { Trip } from '../trips/entities/trip.entity';
-import { Invoice } from '../invoices/entities/invoice.entity';
+import { Trip } from '../modules/trips/entities/trip.entity';
+import { User } from './entities/user.entity';
+import { Invoice } from '../modules/invoices/entities/invoice.entity';
 
 const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',

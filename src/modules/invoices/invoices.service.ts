@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Invoice } from './entities/invoice.entity';
 import { Trip } from '../trips/entities/trip.entity';
-import { InvoiceTemplate } from '../templates/invoiceTemplate';
+import { InvoiceTemplate } from '../../templates/invoiceTemplate';
 
 @Injectable()
 export class InvoicesService {
@@ -33,10 +33,11 @@ export class InvoicesService {
     const template = Handlebars.compile(InvoiceTemplate);
 
     const invoiceData = {
-      company_logo: 'https://example.com/logo.png',
+      company_logo:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBSMUew9zTdrrrYo7sufVRispLXWdw7JvK0A&s',
       company_name: 'Taxi24',
-      company_address: 'Calle Falsa 123, Santo Domingo',
-      company_phone: '809-123-4567',
+      company_address: 'Avenida John F. Kennedy, Santo Domingo 10203',
+      company_phone: '(809) 544-8905',
       invoice_number: invoice.id,
       created_date: invoice.created_at.toDateString(),
       customer_name: invoice.trip.pasajero.name,

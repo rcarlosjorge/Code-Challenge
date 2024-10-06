@@ -8,7 +8,7 @@ import {
   JoinColumn,
   OneToOne,
 } from 'typeorm';
-import { User, EstadoViaje } from '../../db/entities/user.entity';
+import { User, EstadoViaje } from '../../../database/entities/user.entity';
 import { Invoice } from '../../invoices/entities/invoice.entity';
 
 @Entity('trips')

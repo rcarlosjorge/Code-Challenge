@@ -7,7 +7,7 @@ export class CreateDriverDto {
     example: 'Juan',
   })
   @IsString()
-  name: string; // Cambiado a name para que coincida con la estructura unificada.
+  name: string;
 
   @ApiProperty({
     description: 'Latitud geográfica del conductor',
