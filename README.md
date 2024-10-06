@@ -13,7 +13,7 @@
 1. Clona el repositorio en tu máquina local:
 
     ```bash
-    git clone [https://github.com/rcarlosjorge/Code-Challenge.git]
+    git clone https://github.com/rcarlosjorge/Code-Challenge.git
     ```
 
 2. Asegúrate de tener Docker y Docker Compose instalados en tu máquina. Si no los tienes, puedes instalarlos siguiendo las instrucciones en la [documentación oficial de Docker](https://docs.docker.com/get-docker/).
