@@ -53,11 +53,15 @@ export class TripsService {
       throw new NotFoundException('No hay conductores disponibles cerca.');
     }
 
-    const conductor = nearestDrivers[0];
+    const availableDrivers = nearestDrivers.filter(
+      (driver) => driver.estado !== EstadoViaje.OCUPADO,
+    );
 
-    if (conductor.estado === EstadoViaje.OCUPADO) {
-      throw new ConflictException('El conductor ya está en un viaje ocupado.');
+    if (availableDrivers.length === 0) {
+      throw new ConflictException('No hay conductores disponibles.');
     }
+
+    const conductor = availableDrivers[0];
 
     conductor.estado = EstadoViaje.OCUPADO;
     await this.usersRepository.save(conductor);
@@ -83,6 +87,7 @@ export class TripsService {
   async completeTripAndGenerateInvoice(id: number): Promise<Buffer> {
     const trip = await this.tripsRepository.findOne({
       where: { id, estado: EstadoViaje.OCUPADO },
+      relations: ['pasajero', 'conductor'],
     });
 
     if (!trip) {

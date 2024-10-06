@@ -1,7 +1,5 @@
-import * as fs from 'fs';
 import * as Handlebars from 'handlebars';
 import * as puppeteer from 'puppeteer';
-import { join } from 'path';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -58,7 +56,9 @@ export class InvoicesService {
 
     const htmlToRender = template(invoiceData);
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
     const page = await browser.newPage();
     await page.setContent(htmlToRender);
 
