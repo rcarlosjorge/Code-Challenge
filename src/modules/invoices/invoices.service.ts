@@ -48,7 +48,7 @@ export class InvoicesService {
         invoice.trip.origen_longitud,
         invoice.trip.destino_latitud,
         invoice.trip.destino_longitud,
-      ),
+      ).toFixed(2),
       price_per_km: 25,
       trip_total: invoice.total,
       tax: (invoice.total * 0.18).toFixed(2),

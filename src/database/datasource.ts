@@ -5,11 +5,11 @@ import { Invoice } from '../modules/invoices/entities/invoice.entity';
 
 const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
-  host: process.env.POSTGRES_HOST || 'localhost',
-  port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
-  username: process.env.POSTGRES_USER || 'taxi24_user',
-  password: process.env.POSTGRES_PASSWORD || 'taxi24_password',
-  database: process.env.POSTGRES_DB || 'taxi24',
+  host: process.env.POSTGRES_HOST,
+  port: parseInt(process.env.POSTGRES_PORT, 10),
+  username: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+  database: process.env.POSTGRES_DB,
   entities: [User, Trip, Invoice],
   synchronize: true,
 };
