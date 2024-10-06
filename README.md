@@ -21,7 +21,7 @@
 3. Construye y levanta los servicios (API y base de datos PostgreSQL) usando Docker Compose:
 
     ```bash
-    docker-compose up --build
+    docker compose up --build
     ```
 
     > Esto construirá la imagen de la aplicación definida en el `Dockerfile` y levantará el servicio de PostgreSQL. La API correrá en el puerto `3000` y la base de datos en el puerto `5432`.
