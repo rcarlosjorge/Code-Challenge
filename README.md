@@ -28,7 +28,7 @@
 
 4. La lógica para la inicialización de la base de datos con datos dummy está integrada directamente en los scripts del archivo `package.json`. Al levantar los contenedores, el comando `npm run seed:run` se ejecutará automáticamente antes de iniciar la aplicación en modo producción, pre-cargando la base de datos con los datos necesarios.
 
-5. Una vez que los contenedores estén en ejecución, accede a la aplicación a través de `http://localhost:3000`.
+5. Una vez que los contenedores estén en ejecución, accede a la aplicación a través de `http://localhost:3000/api`.
 
 ### Comandos Útiles
 
