@@ -45,12 +45,12 @@
     ```
 
 
-### Archivos Clave
+## Archivos Clave
 - **docker-compose.yml**: Define los servicios de la aplicación (API y base de datos) y las redes en Docker.
 - **Dockerfile**: Define el entorno para construir y ejecutar la aplicación Node.js.
 - **package.json**: Contiene los scripts que facilitan la gestión de la aplicación, incluyendo la lógica para ejecutar migraciones y el seeding de la base de datos.
 
-### Descripción de los directorios:
+## Descripción de los directorios:
 - **/database**: Gestiona la conexión a la base de datos, y los seeds para inicializar la base de datos con data dummy.
 - **/modules**: Contiene los módulos principales de la aplicación:
   - **/trips**: Gestión de viajes.
@@ -60,9 +60,113 @@
   - **/templates**: Almacena el modelo HTML de la factura que es utilizado para generar PDFs con Puppeteer.   
   - **/utils**: Contiene utilidades o funciones auxiliares utilizadas en varios módulos de la aplicación.
 
-## Funcionalidades Implementadas
+## Arquitectura de la Base de Datos
 
-### Endpoints de Pasajeros
+El esquema de la base de datos está compuesto por varias tablas que gestionan tanto a los usuarios (conductores y pasajeros) como los viajes, facturas, y otros aspectos clave del sistema. Se utilizan enumeraciones y relaciones entre tablas para garantizar una estructura eficiente y facilitar las consultas y operaciones dentro de la plataforma.
+
+### Tabla `users`
+
+### Comando SQL para Crear la Tabla `users`
+
+La tabla `users` gestiona tanto a pasajeros como conductores, permitiendo un manejo unificado de roles y estados. Con campos para coordenadas geográficas, facilita la búsqueda de conductores cercanos y la asignación eficiente de viajes mediante el uso de enumeraciones para roles y estados de disponibilidad.
+
+El siguiente comando SQL crea la tabla `users`, que es fundamental para gestionar los usuarios de la plataforma:
+
+```bash
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  latitude DECIMAL(9, 6),
+  longitude DECIMAL(9, 6),
+  role user_role_enum DEFAULT 'passenger' NOT NULL,
+  estado users_estado_enum DEFAULT 'disponible' NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Definir el tipo ENUM para los roles de usuario
+CREATE TYPE user_role_enum AS ENUM ('driver', 'passenger', 'both');
+
+-- Definir el tipo ENUM para el estado del viaje
+CREATE TYPE users_estado_enum AS ENUM ('disponible', 'ocupado', 'completado', 'cancelado');
+```
+
+La tabla User se visualiza de esta forma:
+   
+   ![Tabla Generada](images/Users.png)
+   
+### Tabla `trips`
+
+La tabla trips gestiona los detalles de los viajes realizados en la plataforma. Cada viaje está asociado a un pasajero y un conductor, lo que se maneja mediante relaciones de clave foránea a la tabla `users`. Además, incluye información sobre las coordenadas de origen y destino del viaje, así como su estado (activo, completado, etc.). Esta tabla también está relacionada con la tabla `invoices`, lo que permite generar una factura vinculada a cada viaje realizado.
+
+### Comando SQL para Crear la Tabla `Trips`
+
+```bash
+CREATE TABLE trips (
+  id SERIAL PRIMARY KEY,
+  estado trips_estado_enum DEFAULT 'activo' NOT NULL,
+  origen_latitud DECIMAL(9, 6) NOT NULL,
+  origen_longitud DECIMAL(9, 6) NOT NULL,
+  destino_latitud DECIMAL(9, 6) NOT NULL,
+  destino_longitud DECIMAL(9, 6) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  pasajero_id INTEGER REFERENCES users(id),
+  conductor_id INTEGER REFERENCES users(id)
+);
+
+-- Definir el tipo ENUM para el estado del viaje
+CREATE TYPE trips_estado_enum AS ENUM ('disponible', 'ocupado', 'completado', 'cancelado');
+```
+
+La tabla `trips` se visualiza de esta forma:
+
+![Tabla Generada](images/Trips.jpeg)
+
+### Tabla `invoices`
+
+La tabla `invoices` se encarga de almacenar los detalles de las facturas generadas por los viajes en la plataforma. Cada factura está asociada a un viaje mediante una relación uno a uno con la tabla `trips`. Los campos clave incluyen el total del viaje, la tarifa de servicio y los impuestos aplicables, junto con la fecha de creación y actualización de la factura.
+
+El siguiente comando SQL crea la tabla `invoices`:
+
+```bash
+CREATE TABLE invoices (
+  id SERIAL PRIMARY KEY,
+  trip_total DECIMAL(10, 2) NOT NULL,
+  service_fee DECIMAL(10, 2) NOT NULL,
+  tax DECIMAL(10, 2) NOT NULL,
+  total DECIMAL(10, 2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  trip_id INTEGER UNIQUE REFERENCES trips(id)
+);
+```
+
+La tabla `Invoices` se visualiza de esta forma:
+
+![Tabla Generada](images/Invoice.jpeg)
+
+### Tabla `Config`
+
+La tabla `Config` almacena variables dinámicas clave para la operación del sistema, como el precio por kilómetro (`price_per_km`), el porcentaje de tarifa de servicio (`service_fee_percentage`), el porcentaje de impuestos (`tax_percentage`), y otros valores importantes como la distancia de búsqueda de conductores (`distance_km`). Esta tabla permite cambiar valores globales sin necesidad de modificar el código de la aplicación, haciendo que ajustes en la lógica del negocio se puedan realizar fácilmente a través de actualizaciones en la base de datos.
+
+El siguiente comando SQL crea la tabla `Config`:
+
+```bash
+CREATE TABLE config (
+  id SERIAL PRIMARY KEY,
+  price_per_km DECIMAL(10, 2) NOT NULL,
+  service_fee_percentage DECIMAL(5, 2) NOT NULL,
+  tax_percentage DECIMAL(5, 2) NOT NULL,
+  distance_km DECIMAL(5, 2) NOT NULL
+);
+```
+
+La tabla `Config` se visualiza de esta forma:
+
+![Tabla Generada](images/Config.jpeg)
+ 
+## Funcionalidades Implementadas
 
 ### Endpoints de Pasajeros
 
@@ -212,13 +316,9 @@
 2. **Docker para despliegue rápido y preciso**:
    - Se utilizó **Docker** para contenedorización y despliegue, lo que asegura que la aplicación pueda ser ejecutada de manera rápida y precisa. Esto es particularmente útil para fines de prueba, ya que Docker permite que los seeds de la base de datos se corran automáticamente al iniciar los contenedores, asegurando que los datos estén listos para probar la API sin intervención manual.
 
-2. **Uso de una tabla `Config` para manejar variables dinámicas**:
+3. **Uso de una tabla `Config` para manejar variables dinámicas**:
+   - La tabla `Config` almacena valores clave para el sistema como el precio por kilómetro y el porcentaje de tarifa de servicio. Esto permite realizar ajustes globales de manera rápida sin necesidad de cambiar el código o redeployar la aplicación.
 
-    - Se creó una tabla `Config` que almacena valores clave como el precio por kilómetro (`price_per_km`), el porcentaje de tarifa de servicio (`service_fee_percentage`), el porcentaje de impuestos (`tax_percentage`), y otros valores importantes como la distancia de búsqueda de conductores (`distance_km`). Esta tabla permite que las variables globales puedan cambiarse sin necesidad de modificar el código de la aplicación. Si en algún momento el impuesto o el precio por kilómetro cambian, basta con actualizar los valores en la tabla Config, lo que afectará inmediatamente a todo el sistema sin la necesidad de redeployar el código.
-
-   La tabla Config se visualiza de esta forma:
-   
-   ![Tabla Generada](images/Config.jpeg)
 
 ## Pruebas
 
