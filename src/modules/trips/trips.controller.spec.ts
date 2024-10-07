@@ -10,7 +10,6 @@ describe('TripsController', () => {
   let controller: TripsController;
   let service: TripsService;
 
-  // Mock del servicio
   const mockTripsService = {
     getActiveTrips: jest.fn(),
     createTrip: jest.fn(),
@@ -32,12 +31,10 @@ describe('TripsController', () => {
     service = module.get<TripsService>(TripsService);
   });
 
-  // Verifica que el controlador esté definido
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  // Prueba para el método getActiveTrips
   it('should call getActiveTrips and return a list of active trips', async () => {
     const trips: Trip[] = [{ id: 1, estado: 'OCUPADO' } as unknown as Trip];
     jest.spyOn(service, 'getActiveTrips').mockResolvedValue(trips);
@@ -46,7 +43,6 @@ describe('TripsController', () => {
     expect(service.getActiveTrips).toHaveBeenCalled();
   });
 
-  // Prueba para el método createTrip
   it('should create a new trip', async () => {
     const createTripDto: CreateTripDto = {
       pasajero_id: 1,
@@ -67,7 +63,6 @@ describe('TripsController', () => {
     expect(service.createTrip).toHaveBeenCalledWith(createTripDto);
   });
 
-  // Prueba para el método completeTrip
   it('should complete a trip and return a PDF', async () => {
     const pdfBuffer = Buffer.from('PDF content');
     jest
@@ -77,7 +72,6 @@ describe('TripsController', () => {
     const result = await controller.completeTrip(1);
     expect(service.completeTripAndGenerateInvoice).toHaveBeenCalledWith(1);
 
-    // Verificamos que el contenido retornado sea un StreamableFile con el buffer
     expect(result).toBeInstanceOf(StreamableFile);
     const readable = (result as StreamableFile).getStream() as Readable;
     const data = await new Promise<Buffer>((resolve) => {

@@ -57,7 +57,6 @@ export class CreateTrips {
       },
     ];
 
-    // Actualizar estado de conductores y pasajeros a 'OCUPADO'
     drivers[0].estado = EstadoViaje.OCUPADO;
     drivers[1].estado = EstadoViaje.OCUPADO;
     passengers[0].estado = EstadoViaje.OCUPADO;

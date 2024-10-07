@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { PassengersService } from './passengers.service';
 import { CreatePassengerDto } from './dto/create-passenger.dto';
 import { ApiTags } from '@nestjs/swagger';

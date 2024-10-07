@@ -57,7 +57,8 @@
   - **/driver**: Gestión de conductores.
   - **/invoices**: Generación de facturas en formato PDF.
   - **/passenger**: Gestión de pasajeros.
-- **/templates**: Almacena el modelo HTML de la factura que es utilizado para generar PDFs con Puppeteer.
+  - **/templates**: Almacena el modelo HTML de la factura que es utilizado para generar PDFs con Puppeteer.   
+  - **/utils**: Contiene utilidades o funciones auxiliares utilizadas en varios módulos de la aplicación.
 
 ## Funcionalidades Implementadas
 
@@ -215,23 +216,111 @@
 
     - Se creó una tabla `Config` que almacena valores clave como el precio por kilómetro (`price_per_km`), el porcentaje de tarifa de servicio (`service_fee_percentage`), el porcentaje de impuestos (`tax_percentage`), y otros valores importantes como la distancia de búsqueda de conductores (`distance_km`). Esta tabla permite que las variables globales puedan cambiarse sin necesidad de modificar el código de la aplicación. Si en algún momento el impuesto o el precio por kilómetro cambian, basta con actualizar los valores en la tabla Config, lo que afectará inmediatamente a todo el sistema sin la necesidad de redeployar el código.
 
+   La tabla Config se visualiza de esta forma:
+   
+   ![Tabla Generada](images/Config.jpeg)
+
 ## Pruebas
 
 Se han implementado pruebas de servicio para validar el correcto funcionamiento de los módulos clave en la aplicación.
 
-### Pruebas agregadas:
+## Pruebas Implementadas
 
-1. **TripsService**:
-   - **Prueba de inicialización del servicio**: Verifica que el servicio esté correctamente definido.
-   - **Prueba de viajes activos**: Simula la consulta de todos los viajes activos (estado `OCUPADO`) y valida que el repositorio retorne los resultados esperados.
+### TripsService
 
-2. **PassengersService**:
-   - **Prueba de inicialización del servicio**: Verifica que el servicio esté correctamente definido.
-   - **Prueba para listar pasajeros**: Simula la consulta de todos los pasajeros (rol `PASSENGER`) y valida que el repositorio retorne los resultados correctamente.
+1. **Prueba de inicialización del servicio**:
+   - Verifica que el servicio esté correctamente definido.
 
-3. **DriversService**:
-   - **Prueba de inicialización del servicio**: Verifica que el servicio esté correctamente definido.
-   - **Prueba para listar conductores**: Simula la consulta de todos los conductores (rol `DRIVER`) y valida que el repositorio retorne los resultados esperados.
+2. **Prueba para obtener viajes activos**:
+   - Simula la consulta de todos los viajes con estado `OCUPADO`.
+   - Valida que el repositorio retorne los viajes activos correctamente.
+
+3. **Prueba para crear un viaje**:
+   - Simula la creación de un viaje.
+   - Verifica que se manejen correctamente los casos donde no se encuentra el pasajero o si el pasajero está en un viaje activo.
+   - Valida que se asigne correctamente un conductor disponible y se cree el viaje.
+
+4. **Prueba para completar un viaje y generar factura**:
+   - Simula la finalización de un viaje.
+   - Verifica que se genera correctamente la factura y se actualizan los estados de pasajero y conductor.
+   - Valida que la factura generada sea convertida a un archivo PDF correctamente.
+
+5. **Prueba de excepción para completar un viaje**:
+   - Verifica que se lanza una `NotFoundException` cuando el viaje no es encontrado o ya está completado.
+
+### PassengersService
+
+1. **Prueba de inicialización del servicio**:
+   - Verifica que el servicio esté correctamente definido.
+
+2. **Prueba para listar pasajeros**:
+   - Simula la consulta de todos los pasajeros con el rol `PASSENGER`.
+   - Valida que el repositorio retorne los pasajeros correctamente.
+
+3. **Prueba para crear un pasajero**:
+   - Simula la creación de un pasajero y guarda el registro.
+   - Verifica que se manejen correctamente los estados del pasajero.
+
+4. **Prueba para encontrar conductores cercanos**:
+   - Simula la búsqueda de conductores cercanos para un pasajero según las coordenadas dadas.
+   - Valida que los conductores se devuelven correctamente según la distancia calculada.
+
+### DriversService
+
+1. **Prueba de inicialización del servicio**:
+   - Verifica que el servicio esté correctamente definido.
+
+2. **Prueba para listar conductores**:
+   - Simula la consulta de todos los conductores con el rol `DRIVER`.
+   - Valida que el repositorio retorne los conductores correctamente.
+
+3. **Prueba para encontrar conductores disponibles en un radio**:
+   - Simula la búsqueda de conductores dentro de un radio específico.
+   - Verifica que solo se devuelvan los conductores con el estado `ACTIVO`.
+   - Valida que la distancia se calcule correctamente.
+
+### TripsController
+
+1. **Prueba de inicialización del controlador**:
+   - Verifica que el controlador esté correctamente definido.
+
+2. **Prueba para obtener viajes activos**:
+   - Verifica que el controlador llame al servicio de viajes activos y retorne los viajes.
+
+3. **Prueba para crear un viaje**:
+   - Verifica que el controlador cree un nuevo viaje llamando al servicio con los datos correctos.
+
+4. **Prueba para completar un viaje y generar PDF**:
+   - Verifica que el controlador complete un viaje y retorne un archivo PDF generado correctamente.
+
+### PassengersController
+
+1. **Prueba de inicialización del controlador**:
+   - Verifica que el controlador esté correctamente definido.
+
+2. **Prueba para listar pasajeros**:
+   - Verifica que el controlador llame al servicio de pasajeros y retorne los pasajeros correctamente.
+
+3. **Prueba para crear un pasajero**:
+   - Verifica que el controlador cree un nuevo pasajero llamando al servicio con los datos correctos.
+
+4. **Prueba para encontrar conductores cercanos**:
+   - Verifica que el controlador retorne los conductores cercanos llamando al servicio con las coordenadas correctas.
+
+### DriversController
+
+1. **Prueba de inicialización del controlador**:
+   - Verifica que el controlador esté correctamente definido.
+
+2. **Prueba para listar conductores**:
+   - Verifica que el controlador llame al servicio de conductores y retorne la lista de conductores correctamente.
+
+3. **Prueba para crear un conductor**:
+   - Verifica que el controlador cree un nuevo conductor llamando al servicio con los datos correctos.
+
+4. **Prueba para encontrar conductores disponibles en un radio**:
+   - Verifica que el controlador retorne los conductores disponibles dentro del radio especificado.
+
 
 ### Ejecución de las pruebas:
 Para ejecutar todas las pruebas, utiliza el siguiente comando:

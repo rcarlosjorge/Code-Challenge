@@ -8,6 +8,7 @@ import { Trip } from '../trips/entities/trip.entity';
 import { Config } from '../../database/entities/config.entity';
 import { InvoiceTemplate } from '../../templates/invoiceTemplate';
 import { getConfig } from '../../utils/config.util';
+import { calculateDistance } from '../../utils/distance.util';
 
 @Injectable()
 export class InvoicesService {
@@ -63,7 +64,7 @@ export class InvoicesService {
       customer_name: invoice.trip.pasajero.name,
       trip_origin: `${invoice.trip.origen_latitud}, ${invoice.trip.origen_longitud}`,
       trip_destination: `${invoice.trip.destino_latitud}, ${invoice.trip.destino_longitud}`,
-      trip_distance: this.calculateDistance(
+      trip_distance: calculateDistance(
         invoice.trip.origen_latitud,
         invoice.trip.origen_longitud,
         invoice.trip.destino_latitud,
@@ -91,7 +92,7 @@ export class InvoicesService {
   }
 
   private calculateTotal(trip: Trip, pricePerKm: number): number {
-    const distanceKm = this.calculateDistance(
+    const distanceKm = calculateDistance(
       trip.origen_latitud,
       trip.origen_longitud,
       trip.destino_latitud,
@@ -105,28 +106,5 @@ export class InvoicesService {
     serviceFeePercentage: number,
   ): number {
     return tripTotal * serviceFeePercentage;
-  }
-
-  private calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number,
-  ): number {
-    const R = 6371; // Radio de la Tierra en km
-    const dLat = this.degreesToRadians(lat2 - lat1);
-    const dLon = this.degreesToRadians(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.degreesToRadians(lat1)) *
-        Math.cos(this.degreesToRadians(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
-
-  private degreesToRadians(degrees: number): number {
-    return degrees * (Math.PI / 180);
   }
 }
