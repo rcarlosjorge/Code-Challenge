@@ -52,11 +52,11 @@ describe('DriversController', () => {
   it('should create a new driver', async () => {
     const createDriverDto: CreateDriverDto = {
       name: 'Test Driver',
-      latitude: 0,
-      longitude: 0,
-      role: '',
-      estado: '',
-      active: false,
+      latitude: 18.464601,
+      longitude: -69.932553, 
+      role: UserRole.DRIVER,
+      estado: 'disponible', 
+      active: true, 
     };
     const driver = {
       id: 1,

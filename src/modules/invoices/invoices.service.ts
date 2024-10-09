@@ -7,8 +7,8 @@ import { Invoice } from './entities/invoice.entity';
 import { Trip } from '../trips/entities/trip.entity';
 import { Config } from '../../database/entities/config.entity';
 import { InvoiceTemplate } from '../../templates/invoiceTemplate';
-import { getConfig } from '../../utils/config.util';
-import { calculateDistance } from '../../utils/distance.util';
+import { getConfig } from '../../utils/config/config.util';
+import { calculateDistance } from '../../utils/distance/distance.util';
 
 @Injectable()
 export class InvoicesService {
@@ -18,6 +18,12 @@ export class InvoicesService {
     @InjectRepository(Config)
     private configRepository: Repository<Config>,
   ) {}
+
+  async findInvoiceByTripId(tripId: number): Promise<Invoice | null> {
+    return await this.invoicesRepository.findOne({
+      where: { trip: { id: tripId } },
+    });
+  }
 
   async createInvoice(trip: Trip): Promise<Invoice> {
     const config = await getConfig(this.configRepository);

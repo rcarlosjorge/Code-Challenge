@@ -9,7 +9,7 @@ import {
 import { Repository } from 'typeorm';
 import { Config } from '../../database/entities/config.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import * as distanceUtil from '../../utils/distance.util';
+import * as distanceUtil from '../../utils/distance/distance.util';
 
 describe('PassengersService', () => {
   let service: PassengersService;
@@ -44,7 +44,7 @@ describe('PassengersService', () => {
   });
 
   describe('findAll', () => {
-    it('debería retornar todos los pasajeros', async () => {
+    it('debería retornar todos los pasajeros con paginación', async () => {
       const pasajeros: User[] = [
         {
           id: 3,
@@ -68,12 +68,33 @@ describe('PassengersService', () => {
         },
       ];
 
+      const page = 1;
+      const limit = 10;
+      const skip = (page - 1) * limit;
+      const take = limit;
+
       jest.spyOn(usersRepository, 'find').mockResolvedValue(pasajeros);
 
-      const resultado = await service.findAll();
+      const resultado = await service.findAll(page, limit);
       expect(resultado).toEqual(pasajeros);
       expect(usersRepository.find).toHaveBeenCalledWith({
         where: { role: UserRole.PASSENGER },
+        skip,
+        take,
+      });
+    });
+
+    it('debería lanzar NotFoundException si no se encuentran pasajeros', async () => {
+      const page = 1;
+      const limit = 10;
+  
+      jest.spyOn(usersRepository, 'find').mockResolvedValue([]); 
+  
+      await expect(service.findAll(page, limit)).rejects.toThrow(NotFoundException); 
+      expect(usersRepository.find).toHaveBeenCalledWith({
+        where: { role: UserRole.PASSENGER },
+        skip: 0,
+        take: limit,
       });
     });
   });

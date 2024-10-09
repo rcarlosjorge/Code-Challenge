@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Config } from '../database/entities/config.entity';
+import { Config } from '../../database/entities/config.entity';
 import { NotFoundException } from '@nestjs/common';
 
 export async function getConfig(

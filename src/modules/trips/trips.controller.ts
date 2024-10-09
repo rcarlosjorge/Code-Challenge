@@ -6,6 +6,8 @@ import {
   Param,
   Patch,
   StreamableFile,
+  ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { TripsService } from './trips.service';
 import { CreateTripDto } from './dto/create-trip.dto';
@@ -19,8 +21,11 @@ export class TripsController {
   constructor(private readonly tripsService: TripsService) {}
 
   @Get('active')
-  getActiveTrips(): Promise<Trip[]> {
-    return this.tripsService.getActiveTrips();
+  getActiveTrips(
+    @Query('page', ParseIntPipe) page: number = 1,
+    @Query('limit', ParseIntPipe) limit: number = 10,
+  ): Promise<Trip[]> {
+    return this.tripsService.getActiveTrips(page, limit);
   }
 
   @Post()
@@ -29,7 +34,9 @@ export class TripsController {
   }
 
   @Patch(':id/complete')
-  async completeTrip(@Param('id') id: number): Promise<StreamableFile> {
+  async completeTrip(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<StreamableFile> {
     const pdfBuffer =
       await this.tripsService.completeTripAndGenerateInvoice(id);
 

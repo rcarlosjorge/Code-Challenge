@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  ParseFloatPipe,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { User } from '../../database/entities/user.entity';
@@ -11,8 +20,8 @@ export class DriversController {
 
   @Get('nearest-drivers')
   async findAvailableDrivers(
-    @Query('latitude') latitude: number,
-    @Query('longitude') longitude: number,
+    @Query('latitude', ParseFloatPipe) latitude: number,
+    @Query('longitude', ParseFloatPipe) longitude: number,
   ): Promise<User[]> {
     return this.driversService.findAvailableDriversInRadius(
       latitude,
@@ -21,17 +30,23 @@ export class DriversController {
   }
 
   @Get()
-  findAll(): Promise<User[]> {
-    return this.driversService.findAll();
+  findAll(
+    @Query('page', ParseIntPipe) page: number = 1,
+    @Query('limit', ParseIntPipe) limit: number = 10,
+  ): Promise<User[]> {
+    return this.driversService.findAll(page, limit);
   }
 
   @Get('available')
-  async findAvailableDriversStatus(): Promise<User[]> {
-    return this.driversService.findAvailableDrivers();
+  async findAvailableDriversStatus(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ): Promise<User[]> {
+    return this.driversService.findAvailableDrivers(page, limit);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number): Promise<User> {
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.driversService.findOne(id);
   }
 

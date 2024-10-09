@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -14,6 +15,9 @@ import {
 import { PassengersService } from '../passengers/passengers.service';
 import { InvoicesService } from '../invoices/invoices.service';
 import { CreateTripDto } from './dto/create-trip.dto';
+import { validateId } from '../../utils/validation/id-validation.util';
+import { validateCoordinates } from '../../utils/validation/coordinate-validation.util';
+import { getPaginationOptions } from '../../utils/pagination/pagination.util';
 
 @Injectable()
 export class TripsService {
@@ -26,10 +30,21 @@ export class TripsService {
     private invoicesService: InvoicesService,
   ) {}
 
-  async getActiveTrips(): Promise<Trip[]> {
+  async getActiveTrips(page: number = 1, limit: number = 10): Promise<Trip[]> {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException('Page and limit must be positive numbers');
+    }
+
+    const { page: currentPage, limit: currentLimit } = getPaginationOptions(
+      page,
+      limit,
+    );
+
     const activeTrips = await this.tripsRepository.find({
       where: { estado: EstadoViaje.OCUPADO },
       relations: ['pasajero', 'conductor'],
+      skip: (currentPage - 1) * currentLimit,
+      take: currentLimit,
     });
 
     if (!activeTrips.length) {
@@ -40,20 +55,16 @@ export class TripsService {
   }
 
   async createTrip(createTripDto: CreateTripDto): Promise<Trip> {
-    const pasajero = await this.usersRepository.findOne({
-      where: { id: createTripDto.pasajero_id, role: UserRole.PASSENGER },
-    });
+    const pasajero = await this.findPassenger(createTripDto.pasajero_id);
 
-    if (!pasajero) {
-      throw new NotFoundException('Pasajero no encontrado');
-    }
+    this.checkIfPassengerIsInTrip(pasajero);
 
-    if (pasajero.estado === EstadoViaje.OCUPADO) {
-      throw new ConflictException('El pasajero ya está en un viaje ocupado.');
-    }
-
-    const origen_latitud = createTripDto.origen_latitud ?? pasajero.latitude;
-    const origen_longitud = createTripDto.origen_longitud ?? pasajero.longitude;
+    const {
+      origen_latitud,
+      origen_longitud,
+      destino_latitud,
+      destino_longitud,
+    } = this.extractCoordinates(createTripDto, pasajero);
 
     const nearestDrivers = await this.passengersService.findNearestDrivers(
       origen_latitud,
@@ -64,30 +75,22 @@ export class TripsService {
       throw new NotFoundException('No hay conductores disponibles cerca.');
     }
 
-    const availableDrivers = nearestDrivers.filter(
-      (driver) => driver.estado !== EstadoViaje.OCUPADO,
+    const conductor = this.getAvailableDriver(nearestDrivers);
+
+    await this.updateDriverAndPassengerStatus(
+      conductor,
+      pasajero,
+      EstadoViaje.OCUPADO,
     );
-
-    if (!availableDrivers.length) {
-      throw new ConflictException('No hay conductores disponibles.');
-    }
-
-    const conductor = availableDrivers[0];
-
-    conductor.estado = EstadoViaje.OCUPADO;
-    await this.usersRepository.save(conductor);
-
-    pasajero.estado = EstadoViaje.OCUPADO;
-    await this.usersRepository.save(pasajero);
 
     const trip = this.tripsRepository.create({
       pasajero,
       conductor,
       estado: EstadoViaje.OCUPADO,
-      origen_latitud: origen_latitud,
-      origen_longitud: origen_longitud,
-      destino_latitud: createTripDto.destino_latitud,
-      destino_longitud: createTripDto.destino_longitud,
+      origen_latitud,
+      origen_longitud,
+      destino_latitud,
+      destino_longitud,
       created_at: new Date(),
       updated_at: new Date(),
     });
@@ -96,6 +99,8 @@ export class TripsService {
   }
 
   async completeTripAndGenerateInvoice(id: number): Promise<Buffer> {
+    validateId(id);
+
     const trip = await this.tripsRepository.findOne({
       where: { id, estado: EstadoViaje.OCUPADO },
       relations: ['pasajero', 'conductor'],
@@ -105,6 +110,11 @@ export class TripsService {
       throw new NotFoundException(
         `El viaje con ID ${id} no fue encontrado o ya está completado.`,
       );
+    }
+
+    const existingInvoice = await this.invoicesService.findInvoiceByTripId(id);
+    if (existingInvoice) {
+      throw new ConflictException('Este viaje ya tiene una factura generada.');
     }
 
     trip.estado = EstadoViaje.COMPLETADO;
@@ -117,5 +127,63 @@ export class TripsService {
 
     const invoice = await this.invoicesService.createInvoice(trip);
     return this.invoicesService.generateInvoicePdf(invoice.id);
+  }
+
+  private async findPassenger(pasajero_id: number): Promise<User> {
+    const pasajero = await this.usersRepository.findOne({
+      where: { id: pasajero_id, role: UserRole.PASSENGER },
+    });
+
+    if (!pasajero) {
+      throw new NotFoundException('Pasajero no encontrado');
+    }
+
+    return pasajero;
+  }
+
+  private checkIfPassengerIsInTrip(pasajero: User): void {
+    if (pasajero.estado === EstadoViaje.OCUPADO) {
+      throw new ConflictException('El pasajero ya está en un viaje ocupado.');
+    }
+  }
+
+  private extractCoordinates(createTripDto: CreateTripDto, pasajero: User) {
+    const origen_latitud = createTripDto.origen_latitud ?? pasajero.latitude;
+    const origen_longitud = createTripDto.origen_longitud ?? pasajero.longitude;
+    validateCoordinates(origen_latitud, origen_longitud);
+
+    const destino_latitud = createTripDto.destino_latitud;
+    const destino_longitud = createTripDto.destino_longitud;
+    validateCoordinates(destino_latitud, destino_longitud);
+
+    return {
+      origen_latitud,
+      origen_longitud,
+      destino_latitud,
+      destino_longitud,
+    };
+  }
+
+  private getAvailableDriver(drivers: User[]): User {
+    const availableDrivers = drivers.filter(
+      (driver) => driver.estado !== EstadoViaje.OCUPADO,
+    );
+
+    if (!availableDrivers.length) {
+      throw new ConflictException('No hay conductores disponibles.');
+    }
+
+    return availableDrivers[0];
+  }
+
+  private async updateDriverAndPassengerStatus(
+    conductor: User,
+    pasajero: User,
+    estado: EstadoViaje,
+  ): Promise<void> {
+    conductor.estado = estado;
+    pasajero.estado = estado;
+
+    await this.usersRepository.save([conductor, pasajero]);
   }
 }

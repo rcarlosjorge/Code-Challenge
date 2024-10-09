@@ -1,6 +1,6 @@
 import {
-  BadRequestException,
   Injectable,
+  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePassengerDto } from './dto/create-passenger.dto';
@@ -11,9 +11,13 @@ import {
   User,
   UserRole,
 } from '../../database/entities/user.entity';
-import { getConfig } from '../../utils/config.util';
+import { getConfig } from '../../utils/config/config.util';
 import { Config } from '../../database/entities/config.entity';
-import { calculateDistance } from '../../utils/distance.util';
+import { calculateDistance } from '../../utils/distance/distance.util';
+import { validateId } from '../../utils/validation/id-validation.util';
+import { getPaginationOptions } from '../../utils/pagination/pagination.util';
+import { validateCoordinates } from '../../utils/validation/coordinate-validation.util';
+
 @Injectable()
 export class PassengersService {
   constructor(
@@ -34,12 +38,23 @@ export class PassengersService {
       updated_at: currentDate,
     });
 
-    return this.usersRepository.save(passenger);
+    return await this.usersRepository.save(passenger);
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(page: number = 1, limit: number = 10): Promise<User[]> {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException('Page and limit must be positive numbers');
+    }
+
+    const { page: currentPage, limit: currentLimit } = getPaginationOptions(
+      page,
+      limit,
+    );
+
     const passengers = await this.usersRepository.find({
       where: { role: UserRole.PASSENGER },
+      skip: (currentPage - 1) * currentLimit,
+      take: currentLimit,
     });
 
     if (!passengers.length) {
@@ -50,9 +65,7 @@ export class PassengersService {
   }
 
   async findOne(id: number): Promise<User> {
-    if (isNaN(id) || id <= 0) {
-      throw new BadRequestException('Invalid ID provided');
-    }
+    validateId(id);
 
     const passenger = await this.usersRepository.findOne({
       where: { id, role: UserRole.PASSENGER },
@@ -69,6 +82,8 @@ export class PassengersService {
     latitude: number,
     longitude: number,
   ): Promise<User[]> {
+    validateCoordinates(latitude, longitude);
+
     const config = await getConfig(this.configRepository);
     const drivers = await this.usersRepository.find({
       where: { role: UserRole.DRIVER },

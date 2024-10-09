@@ -9,7 +9,7 @@ import {
 import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { Config } from '../../database/entities/config.entity';
-import * as distanceUtil from '../../utils/distance.util';
+import * as distanceUtil from '../../utils/distance/distance.util';
 
 describe('DriversService', () => {
   let service: DriversService;
@@ -52,7 +52,7 @@ describe('DriversService', () => {
   });
 
   describe('findAll', () => {
-    it('should return all drivers', async () => {
+    it('should return paginated drivers', async () => {
       const drivers: User[] = [
         {
           id: 1,
@@ -76,12 +76,37 @@ describe('DriversService', () => {
         },
       ];
 
+      const page = 1;
+      const limit = 10;
+      const skip = (page - 1) * limit;
+      const take = limit;
+
       mockUsersRepository.find.mockResolvedValue(drivers);
 
-      const result = await service.findAll();
+      const result = await service.findAll(page, limit);
+
       expect(result).toEqual(drivers);
-      expect(usersRepository.find).toHaveBeenCalledWith({
+
+      expect(mockUsersRepository.find).toHaveBeenCalledWith({
         where: { role: UserRole.DRIVER },
+        skip,
+        take,
+      });
+    });
+
+    it('should throw NotFoundException when no drivers are found', async () => {
+      jest.spyOn(mockUsersRepository, 'find').mockResolvedValue([]);
+
+      const page = 1;
+      const limit = 10;
+
+      await expect(service.findAll(page, limit)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockUsersRepository.find).toHaveBeenCalledWith({
+        where: { role: UserRole.DRIVER },
+        skip: 0,
+        take: limit,
       });
     });
   });
@@ -147,7 +172,7 @@ describe('DriversService', () => {
   });
 
   describe('findAvailableDrivers', () => {
-    it('should return active drivers', async () => {
+    it('should return active drivers with pagination', async () => {
       const drivers = [
         {
           id: 1,
@@ -155,14 +180,43 @@ describe('DriversService', () => {
           role: UserRole.DRIVER,
           estado: EstadoViaje.ACTIVO,
         },
+        {
+          id: 2,
+          name: 'Juan',
+          role: UserRole.DRIVER,
+          estado: EstadoViaje.ACTIVO,
+        },
       ];
+
+      const page = 1;
+      const limit = 10;
+      const skip = (page - 1) * limit;
 
       mockUsersRepository.find.mockResolvedValue(drivers);
 
-      const result = await service.findAvailableDrivers();
+      const result = await service.findAvailableDrivers(page, limit);
+
       expect(result).toEqual(drivers);
       expect(usersRepository.find).toHaveBeenCalledWith({
         where: { role: UserRole.DRIVER, estado: EstadoViaje.ACTIVO },
+        skip,
+        take: limit,
+      });
+    });
+
+    it('should throw NotFoundException if no active drivers are found', async () => {
+      const page = 1;
+      const limit = 10;
+
+      mockUsersRepository.find.mockResolvedValue([]);
+
+      await expect(service.findAvailableDrivers(page, limit)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(usersRepository.find).toHaveBeenCalledWith({
+        where: { role: UserRole.DRIVER, estado: EstadoViaje.ACTIVO },
+        skip: (page - 1) * limit,
+        take: limit,
       });
     });
   });

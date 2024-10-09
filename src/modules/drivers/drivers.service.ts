@@ -12,8 +12,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Config } from '../../database/entities/config.entity';
-import { getConfig } from '../../utils/config.util';
-import { calculateDistance } from '../../utils/distance.util';
+import { getConfig } from '../../utils/config/config.util';
+import { calculateDistance } from '../../utils/distance/distance.util';
+import { validateId } from '../../utils/validation/id-validation.util';
+import { getPaginationOptions } from '../../utils/pagination/pagination.util';
+import { validateCoordinates } from '../../utils/validation/coordinate-validation.util';
 
 @Injectable()
 export class DriversService {
@@ -37,9 +40,20 @@ export class DriversService {
     return await this.usersRepository.save(driver);
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(page: number, limit: number): Promise<User[]> {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException('Page and limit must be positive numbers');
+    }
+
+    const { page: currentPage, limit: currentLimit } = getPaginationOptions(
+      page,
+      limit,
+    );
+
     const drivers = await this.usersRepository.find({
       where: { role: UserRole.DRIVER },
+      skip: (currentPage - 1) * currentLimit,
+      take: currentLimit,
     });
 
     if (!drivers.length) {
@@ -50,9 +64,7 @@ export class DriversService {
   }
 
   async findOne(id: number): Promise<User> {
-    if (isNaN(id) || id <= 0) {
-      throw new BadRequestException('Invalid ID provided');
-    }
+    validateId(id);
 
     const driver = await this.usersRepository.findOne({
       where: { id, role: UserRole.DRIVER },
@@ -65,16 +77,38 @@ export class DriversService {
     return driver;
   }
 
-  async findAvailableDrivers(): Promise<User[]> {
-    return this.usersRepository.find({
+  async findAvailableDrivers(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<User[]> {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException('Page and limit must be positive numbers');
+    }
+
+    const { page: currentPage, limit: currentLimit } = getPaginationOptions(
+      page,
+      limit,
+    );
+
+    const drivers = await this.usersRepository.find({
       where: { role: UserRole.DRIVER, estado: EstadoViaje.ACTIVO },
+      skip: (currentPage - 1) * currentLimit,
+      take: currentLimit,
     });
+
+    if (!drivers.length) {
+      throw new NotFoundException('No available drivers found');
+    }
+
+    return drivers;
   }
 
   async findAvailableDriversInRadius(
     latitude: number,
     longitude: number,
   ): Promise<User[]> {
+    validateCoordinates(latitude, longitude);
+
     const config = await getConfig(this.configRepository);
 
     const drivers = await this.usersRepository.find({
@@ -82,7 +116,7 @@ export class DriversService {
     });
 
     if (!drivers.length) {
-      throw new NotFoundException('No drivers found');
+      throw new NotFoundException('No available drivers found');
     }
 
     const driversWithinRadius = drivers.filter((driver) => {

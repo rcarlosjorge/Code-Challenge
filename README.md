@@ -308,6 +308,81 @@ La tabla `Config` se visualiza de esta forma:
 
 ![Factura Generada](images/factura.jpeg)
 
+## Validaciones en el proyecto
+
+Este proyecto utiliza **class-validator** y validaciones personalizadas para asegurar la integridad de los datos. Las validaciones están habilitadas globalmente mediante `ValidationPipe` en el archivo `main.ts`.
+
+### Configuración de validaciones globales
+
+En el archivo `main.ts`, las validaciones se configuran globalmente de la siguiente manera:
+
+```typescript
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true, // Elimina los atributos no declarados en el DTO
+    forbidNonWhitelisted: true, // Genera un error si se envían atributos no válidos
+    transform: true, // Convierte los tipos de datos al tipo esperado en el DTO
+  }),
+);
+```
+
+### Manejo de excepciones personalizado
+Se implementa un filtro de excepciones personalizado para centralizar el manejo de errores y formatear las respuestas de error de manera uniforme:
+
+```typescript
+@Catch()
+export class CustomExceptionFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+
+    let status: number;
+    let message: string | object;
+
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      message = exception.getResponse();
+    } else if (exception === null || exception === undefined) {
+      status = HttpStatus.NOT_FOUND;
+      message = 'Resource not found';
+    } else {
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      message = 'Internal server error';
+    }
+
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      message,
+    });
+  }
+}
+
+```
+
+![Custom error](images/Custom.png)
+
+### Otras validaciones
+
+- **Validación de paginación**: Lógica para manejar page y limit con paginación.
+- **Validación de IDs**: Para asegurar que los IDs sean positivos y válidos, se usa validateId.
+- **Coordenadas geográficas**: Las latitudes deben estar entre 18.2 y 18.6, y las longitudes entre -70.1 y -69.7.
+
+  ```typescript
+  @IsNumber()
+  @Min(18.2, { message: 'La latitud debe ser mayor o igual a 18.2' })
+  @Max(18.6, { message: 'La latitud debe ser menor o igual a 18.6' })
+  latitude: number;
+
+  @IsNumber()
+  @Min(-70.1, { message: 'La longitud debe ser mayor o igual a -70.1' })
+  @Max(-69.7, { message: 'La longitud debe ser menor o igual a -69.7' })
+  longitude: number;
+  ```
+
+
 ## Decisiones Técnicas
 
 1. **Uso de una única tabla `User` para pasajeros y conductores**:
